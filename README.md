@@ -1,7 +1,6 @@
 # 551UK USB Charge Control — iOS 16 rootless
 
-Native Charge Control app for jailbroken iOS 16 (Dopamine rootless), developed by **551UK**.
-
+Native Charge Control app for jailbroken iOS 16 (Dopamine rootless)
 ## Current build: v0.8.8
 
 Version 0.8.8 is a **packaging-only update** based on the functional v0.8.7 build. It removes the obsolete **USB Diagnostics** home-screen app and keeps only **Charge Control**. The native Charge Control executable and core charging code are preserved from v0.8.7.
