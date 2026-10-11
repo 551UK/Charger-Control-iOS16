@@ -68,7 +68,7 @@ jobs:
           cp "$GITHUB_WORKSPACE/source/payload/var/jb/Applications/USBChargeControl.app/Info.plist" payload/var/jb/Applications/USBChargeControl.app/Info.plist
           cp "$GITHUB_WORKSPACE/source/README.md" README.md
           cp "$GITHUB_WORKSPACE/source/build_usb_v0812.py" build_usb_v0812.py
-          rm -f build_usb_v088.py build_usb_v089.py
+          rm -f build_usb_v088.py build_usb_v089.py build_usb_v0810.py build_usb_v0811.py
           cp "$RUNNER_TEMP/compiled/USBChargeControl" USBChargeControl
           cp USBChargeControl payload/var/jb/Applications/USBChargeControl.app/USBChargeControl
           chmod 755 USBChargeControl payload/var/jb/Applications/USBChargeControl.app/USBChargeControl
@@ -76,7 +76,7 @@ jobs:
           mv 551UK-USB-Charge-Control-v0.8.12.deb "$GITHUB_WORKSPACE/dist/"
           zip -q -r "$GITHUB_WORKSPACE/dist/551UK-USB-Charge-Control-v0.8.12-Source.zip" .
           cd "$GITHUB_WORKSPACE"
-          test "$(dpkg-deb -f dist/551UK-USB-Charge-Control-v0.8.12.deb Version)" = '0.8.11'
+          test "$(dpkg-deb -f dist/551UK-USB-Charge-Control-v0.8.12.deb Version)" = '0.8.12'
           test "$(dpkg-deb -f dist/551UK-USB-Charge-Control-v0.8.12.deb Name)" = 'USB Charge Control'
           python3 - <<'PY'
           import plistlib, subprocess, tempfile, pathlib
@@ -92,7 +92,7 @@ jobs:
               assert info['CFBundleName']=='Charge Control'
               assert info['CFBundleExecutable']=='USBChargeControl'
               assert info['CFBundleIdentifier']=='uk.551.usbchargecontrol'
-              assert info['CFBundleVersion']=='0.8.11'
+              assert info['CFBundleVersion']=='0.8.12'
           PY
           unzip -t dist/551UK-USB-Charge-Control-v0.8.12-Source.zip | tail -1
       - name: Commit compiled files to main
