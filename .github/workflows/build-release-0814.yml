@@ -1,0 +1,137 @@
+name: Build and release USB Charge Control v0.8.14
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'source/USBChargeControl.m'
+      - 'source/Info.plist'
+      - 'source/payload/var/jb/Applications/USBChargeControl.app/Info.plist'
+      - 'source/control'
+      - 'source/payload/DEBIAN/control'
+      - 'source/build_usb_v0814.py'
+      - '.github/workflows/build-release-0813.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  compile-app:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile native iOS 16 UIKit app for arm64
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdk="$(xcrun --sdk iphoneos --show-sdk-path)"
+          xcrun --sdk iphoneos clang \
+            -target arm64-apple-ios16.0 \
+            -isysroot "$sdk" \
+            -fobjc-arc -O2 -fmodules \
+            -framework Foundation -framework UIKit \
+            -Wl,-dead_strip \
+            source/USBChargeControl.m \
+            -o USBChargeControl
+          file USBChargeControl
+          test -s USBChargeControl
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-arm64-app-v0814
+          path: USBChargeControl
+          if-no-files-found: error
+          retention-days: 7
+
+  package-and-release:
+    needs: compile-app
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/download-artifact@v4
+        with:
+          name: native-arm64-app-v0814
+          path: ${{ runner.temp }}/compiled
+      - name: Build DEB and complete source ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/v0814-source" "$GITHUB_WORKSPACE/dist"
+          cd "$RUNNER_TEMP/v0814-source"
+          unzip -q "$GITHUB_WORKSPACE/dist/551UK-USB-Charge-Control-v0.8.13-Source.zip"
+          cp "$GITHUB_WORKSPACE/source/USBChargeControl.m" USBChargeControl.m
+          cp "$GITHUB_WORKSPACE/source/Info.plist" Info.plist
+          cp "$GITHUB_WORKSPACE/source/control" control
+          cp "$GITHUB_WORKSPACE/source/payload/DEBIAN/control" payload/DEBIAN/control
+          cp "$GITHUB_WORKSPACE/source/payload/var/jb/Applications/USBChargeControl.app/Info.plist" payload/var/jb/Applications/USBChargeControl.app/Info.plist
+          cp "$GITHUB_WORKSPACE/source/README.md" README.md
+          cp "$GITHUB_WORKSPACE/source/build_usb_v0814.py" build_usb_v0814.py
+          rm -f build_usb_v088.py build_usb_v089.py build_usb_v0810.py build_usb_v0811.py build_usb_v0812.py build_usb_v0813.py
+          cp "$RUNNER_TEMP/compiled/USBChargeControl" USBChargeControl
+          cp USBChargeControl payload/var/jb/Applications/USBChargeControl.app/USBChargeControl
+          chmod 755 USBChargeControl payload/var/jb/Applications/USBChargeControl.app/USBChargeControl
+          python3 build_usb_v0814.py
+          mv 551UK-USB-Charge-Control-v0.8.14.deb "$GITHUB_WORKSPACE/dist/"
+          zip -q -r "$GITHUB_WORKSPACE/dist/551UK-USB-Charge-Control-v0.8.14-Source.zip" .
+          cd "$GITHUB_WORKSPACE"
+          test "$(dpkg-deb -f dist/551UK-USB-Charge-Control-v0.8.14.deb Version)" = '0.8.13'
+          test "$(dpkg-deb -f dist/551UK-USB-Charge-Control-v0.8.14.deb Name)" = 'USB Charge Control'
+          python3 - <<'PY'
+          import plistlib, subprocess, tempfile, pathlib
+          deb = 'dist/551UK-USB-Charge-Control-v0.8.14.deb'
+          listing = subprocess.check_output(['dpkg-deb','--contents',deb], text=True)
+          assert 'Applications/ChargingRate.app' not in listing
+          assert 'Applications/USBChargeControl.app' in listing
+          with tempfile.TemporaryDirectory() as d:
+              subprocess.run(['dpkg-deb','-x',deb,d],check=True)
+              p=pathlib.Path(d)/'var/jb/Applications/USBChargeControl.app/Info.plist'
+              info=plistlib.loads(p.read_bytes())
+              assert info['CFBundleDisplayName']=='Charge Control'
+              assert info['CFBundleName']=='Charge Control'
+              assert info['CFBundleExecutable']=='USBChargeControl'
+              assert info['CFBundleIdentifier']=='uk.551.usbchargecontrol'
+              assert info['CFBundleVersion']=='0.8.13'
+          PY
+          unzip -t dist/551UK-USB-Charge-Control-v0.8.14-Source.zip | tail -1
+      - name: Commit compiled files to main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          # Remove old DEBs from Git; preserve all source archives and known-good backups.
+          find dist -maxdepth 1 -type f -name '*.deb' ! -name '551UK-USB-Charge-Control-v0.8.14.deb' -print0 | xargs -0 -r git rm -f --
+          git add dist/551UK-USB-Charge-Control-v0.8.14.deb dist/551UK-USB-Charge-Control-v0.8.14-Source.zip
+          if ! git diff --cached --quiet; then
+            git commit -m 'Add compiled v0.8.14 DEB and source archive'
+            git push origin HEAD:main
+          fi
+      - name: Publish v0.8.14 release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(dist/551UK-USB-Charge-Control-v0.8.14.deb dist/551UK-USB-Charge-Control-v0.8.14-Source.zip)
+          if gh release view v0.8.14 >/dev/null 2>&1; then
+            gh release upload v0.8.14 "${files[@]}" --clobber
+          else
+            gh release create v0.8.14 "${files[@]}" --title 'v0.8.14' --notes ''
+          fi
+      - name: Remove DEB assets from older releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Do not delete historical release pages or source ZIPs.
+          gh release list --limit 1000 --json tagName --jq '.[].tagName' | while IFS= read -r tag; do
+            [ "$tag" = "v0.8.14" ] && continue
+            gh release view "$tag" --json assets --jq '.assets[].name | select(endswith(".deb"))' |
+            while IFS= read -r asset; do
+              [ -n "$asset" ] || continue
+              gh release delete-asset "$tag" "$asset" --yes
+            done
+          done
