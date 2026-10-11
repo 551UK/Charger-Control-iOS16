@@ -42,10 +42,10 @@ static NSString *watts(NSDictionary*d,NSString*k,NSInteger divide) {
 static UIColor *rgb(CGFloat r,CGFloat g,CGFloat b){return [UIColor colorWithRed:r green:g blue:b alpha:1];}
 @interface ChargeViewController:UIViewController
 @property(nonatomic,strong)UIScrollView *scroll;
-@property(nonatomic,strong)UILabel *statusLabel,*chargerLabel,*inputLabel,*batteryLabel,*usbLabel,*effectiveLabel,*capLabel,*batteryPctLabel;
+@property(nonatomic,strong)UILabel *statusLabel,*chargerLabel,*inputLabel,*batteryLabel,*usbLabel,*effectiveLabel,*capTitleLabel,*capLabel,*minCapLabel,*maxCapLabel,*batteryPctLabel;
 @property(nonatomic,strong)UISlider *currentSlider;
 @property(nonatomic,strong)UISwitch *enableSwitch;
-@property(nonatomic,strong)UIButton *applyButton,*restoreButton;
+@property(nonatomic,strong)UIButton *applyButton,*restoreButton,*githubButton;
 @property(nonatomic,strong)NSTimer *timer;
 @property(nonatomic,assign)BOOL busy;
 @end
@@ -71,35 +71,56 @@ static UIColor *rgb(CGFloat r,CGFloat g,CGFloat b){return [UIColor colorWithRed:
     self.scroll.autoresizingMask=UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight;
     [self.view addSubview:self.scroll];
     UIColor *white=rgb(.95,.97,1),*mute=rgb(.6,.68,.79),*cyan=rgb(.40,.82,1);
-    [self makeLabel:@"USB Charge Control" font:27 y:28 color:white];
-    [self makeLabel:@"551UK  •  Dopamine rootless  •  iOS 16" font:12 y:69 color:mute];
-    self.statusLabel=[self makeLabel:@"Connecting to charging controller…" font:13 y:107 color:cyan];
-    self.statusLabel.frame=CGRectMake(18,107,330,48);
-    [self makeLabel:@"CHARGING DATA" font:13 y:161 color:cyan];
-    self.chargerLabel=[self makeLabel:@"Charger Rating: —" font:16 y:193 color:white];
-    self.inputLabel=[self makeLabel:@"Input Rail: — W  |  — mA" font:18 y:230 color:white];
-    self.batteryLabel=[self makeLabel:@"Battery: — W  |  — mA" font:18 y:270 color:white];
-    self.batteryPctLabel=[self makeLabel:@"Battery: —" font:15 y:306 color:mute];
-    self.usbLabel=[self makeLabel:@"USB negotiated voltage: —" font:15 y:342 color:mute];
-    self.effectiveLabel=[self makeLabel:@"Current USB limit: —" font:15 y:377 color:white];
-    [self makeLabel:@"CHARGING CURRENT CAP" font:13 y:424 color:cyan];
-    self.capLabel=[self makeLabel:@"Selected: 1000mA" font:18 y:461 color:white];
-    self.currentSlider=[[UISlider alloc]initWithFrame:CGRectMake(18,510,330,34)];
+    // Centered app heading, without the obsolete 551UK/Dopamine/iOS subtitle.
+    UILabel *heading=[self makeLabel:@"USB Charge Control" font:27 y:28 color:white];
+    heading.textAlignment=NSTextAlignmentCenter;
+    heading.numberOfLines=1;
+    self.statusLabel=[self makeLabel:@"Connecting to charging controller…" font:13 y:89 color:cyan];
+    self.statusLabel.frame=CGRectMake(18,89,330,48);
+    [self makeLabel:@"CHARGING DATA" font:13 y:143 color:cyan];
+    self.chargerLabel=[self makeLabel:@"Charger Rating: —" font:16 y:175 color:white];
+    self.inputLabel=[self makeLabel:@"Input Rail: — W  |  — mA" font:18 y:212 color:white];
+    self.batteryLabel=[self makeLabel:@"Battery: — W  |  — mA" font:18 y:252 color:white];
+    self.batteryPctLabel=[self makeLabel:@"Battery: —" font:15 y:288 color:mute];
+    self.usbLabel=[self makeLabel:@"USB negotiated voltage: —" font:15 y:324 color:mute];
+    self.effectiveLabel=[self makeLabel:@"Current USB limit: —" font:15 y:359 color:white];
+    // One horizontal row: retain the original blue charging-cap section heading.
+    self.capTitleLabel=[self makeLabel:@"CHARGING CURRENT CAP" font:13 y:406 color:cyan];
+    self.capTitleLabel.numberOfLines=1;
+    self.capLabel=[self makeLabel:@"Selected: 1000 mA" font:14 y:406 color:white];
+    self.capLabel.numberOfLines=1;
+    self.capLabel.textAlignment=NSTextAlignmentRight;
+    self.currentSlider=[[UISlider alloc]initWithFrame:CGRectMake(18,458,330,34)];
     self.currentSlider.minimumValue=500;self.currentSlider.maximumValue=2400;self.currentSlider.value=1000;
     [self.currentSlider addTarget:self action:@selector(sliderChanged:) forControlEvents:UIControlEventValueChanged];
     [self.currentSlider addTarget:self action:@selector(sliderDone:) forControlEvents:UIControlEventTouchUpInside|UIControlEventTouchUpOutside];
     [self.scroll addSubview:self.currentSlider];
-    [self makeLabel:@"500mA                             2400mA" font:12 y:542 color:mute];
-    [self makeLabel:@"2400mA is a ceiling, not a faster charging setting. Use Restore for no cap." font:11 y:575 color:mute].frame=CGRectMake(18,575,330,43);
-    [self makeLabel:@"Enable current limit" font:17 y:625 color:white];
-    self.enableSwitch=[[UISwitch alloc]initWithFrame:CGRectMake(274,631,55,36)];
+    // Separate labels ensure 2400mA is flush with the right end of the slider.
+    self.minCapLabel=[self makeLabel:@"500mA" font:12 y:493 color:mute];
+    self.maxCapLabel=[self makeLabel:@"2400mA" font:12 y:493 color:mute];
+    self.minCapLabel.numberOfLines=1;
+    self.maxCapLabel.numberOfLines=1;
+    self.maxCapLabel.textAlignment=NSTextAlignmentRight;
+    [self makeLabel:@"2400mA is a ceiling, not a faster charging setting. Use Restore for no cap." font:11 y:529 color:mute].frame=CGRectMake(18,529,330,43);
+    [self makeLabel:@"Enable current limit" font:17 y:581 color:white];
+    self.enableSwitch=[[UISwitch alloc]initWithFrame:CGRectMake(274,587,55,36)];
     [self.enableSwitch addTarget:self action:@selector(toggleChanged:) forControlEvents:UIControlEventValueChanged];
     [self.scroll addSubview:self.enableSwitch];
-    self.applyButton=[self makeButton:@"Apply selected current" y:685 color:rgb(.08,.45,.77) action:@selector(applyTapped:)];
-    self.restoreButton=[self makeButton:@"Restore normal charging" y:748 color:rgb(.39,.20,.23) action:@selector(restoreTapped:)];
-    [self makeLabel:@"Live power readings may take 15–20 seconds to update while waiting for iOS telemetry. USB cap confirmation is separate from these readings." font:12 y:816 color:mute].frame=CGRectMake(18,816,330,80);
-    [self makeLabel:@"Charger Rating is iOS-reported, not wall-meter measured. No CPU/GPU throttling." font:11 y:902 color:mute].frame=CGRectMake(18,902,330,62);
-    self.scroll.contentSize=CGSizeMake(365,990);
+    self.applyButton=[self makeButton:@"Apply selected current" y:641 color:rgb(.08,.45,.77) action:@selector(applyTapped:)];
+    self.restoreButton=[self makeButton:@"Restore normal charging" y:704 color:rgb(.39,.20,.23) action:@selector(restoreTapped:)];
+    [self makeLabel:@"Live power readings may take 15–20 seconds to update while waiting for iOS telemetry. USB cap confirmation is separate from these readings." font:12 y:772 color:mute].frame=CGRectMake(18,772,330,80);
+    [self makeLabel:@"Charger Rating is iOS-reported, not wall-meter measured. No CPU/GPU throttling." font:11 y:858 color:mute].frame=CGRectMake(18,858,330,62);
+    self.scroll.contentSize=CGSizeMake(365,952);
+    // Keep the repository link visible at the bottom, even when the data scrolls.
+    self.githubButton=[UIButton buttonWithType:UIButtonTypeSystem];
+    self.githubButton.backgroundColor=rgb(.05,.075,.12);
+    [self.githubButton setTitle:@"GitHub Repository ↗" forState:UIControlStateNormal];
+    [self.githubButton setTitleColor:cyan forState:UIControlStateNormal];
+    self.githubButton.titleLabel.font=[UIFont systemFontOfSize:14 weight:UIFontWeightSemibold];
+    [self.githubButton addTarget:self action:@selector(openRepository:) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:self.githubButton];
+    self.scroll.contentInset=UIEdgeInsetsMake(0,0,65,0);
+    self.scroll.scrollIndicatorInsets=UIEdgeInsetsMake(0,0,65,0);
     NSInteger saved=[[NSUserDefaults standardUserDefaults]integerForKey:@"selectedCurrent"];
     if(saved>=500&&saved<=2400)self.currentSlider.value=saved;
     [self sliderChanged:self.currentSlider];[self refresh:nil];
@@ -107,13 +128,25 @@ static UIColor *rgb(CGFloat r,CGFloat g,CGFloat b){return [UIColor colorWithRed:
 }
 - (void)viewDidLayoutSubviews{
     [super viewDidLayoutSubviews];
-    CGFloat w=self.view.bounds.size.width, usable=w-36;
+    CGFloat w=self.view.bounds.size.width, usable=MAX(0,w-36);
     for(UIView *v in self.scroll.subviews){
         if(v==self.enableSwitch){v.frame=CGRectMake(w-84,v.frame.origin.y,55,36);continue;}
         CGRect f=v.frame;f.size.width=usable;v.frame=f;
     }
-    CGRect s=self.currentSlider.frame;s.size.width=usable;self.currentSlider.frame=s;
-    self.scroll.contentSize=CGSizeMake(w,990);
+    // Fit the cyan heading and selected current side-by-side on one row.
+    CGFloat selectedWidth=MIN(144,usable*.43);
+    self.capTitleLabel.frame=CGRectMake(18,406,usable-selectedWidth-4,44);
+    self.capLabel.frame=CGRectMake(18+usable-selectedWidth,406,selectedWidth,44);
+    // Pin minimum and maximum labels to the slider's respective endpoints.
+    self.minCapLabel.frame=CGRectMake(18,493,94,44);
+    self.maxCapLabel.frame=CGRectMake(w-18-94,493,94,44);
+    self.githubButton.frame=CGRectMake(18,CGRectGetMaxY(self.view.safeAreaLayoutGuide.layoutFrame)-46,usable,42);
+    self.scroll.contentSize=CGSizeMake(w,952);
+}
+- (void)openRepository:(id)sender{
+    (void)sender;
+    NSURL *url=[NSURL URLWithString:@"https://github.com/551UK/Charger-Control-iOS16"];
+    [[UIApplication sharedApplication] openURL:url options:@{} completionHandler:nil];
 }
 - (NSInteger)selectedMA{return (NSInteger)(roundf(self.currentSlider.value/100.0f)*100);}
 - (void)sliderChanged:(id)sender{

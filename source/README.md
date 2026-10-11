@@ -1,11 +1,22 @@
-# 551UK USB Charge Control v0.8.8 — ONE APP
+# USB Charge Control v0.8.9 — UIKit layout update
 
-v0.8.8 is a packaging-only fix to v0.8.7. It removes the legacy `USB Diagnostics` app (`/var/jb/Applications/ChargingRate.app`, bundle ID `uk.551.chargingratetest`) and its stale home-screen registration. It retains the native `Charge Control` UIKit app (`/var/jb/Applications/USBChargeControl.app`, bundle ID `uk.551.usbchargecontrol`).
+A rootless iOS 16/Dopamine native app for adjustable USB charge-current caps and charging power telemetry.
 
-**No edits to the native app binary, native app source, charging daemon, backend Python source, background watchdog, power restore, cap handling, or telemetry.** The embedded native executable is exactly the v0.8.7 working binary; only the Info.plist version has been updated. The new package still uses package ID `uk.551.chargingratetest`, which is distinct from the removed UI's app bundle identifier but deliberately unchanged for seamless upgrading and retained settings.
+## New in v0.8.9
 
-Upgrading via Sileo should replace 0.8.7 directly and unregister/remove the obsolete home-screen icon. If the old icon remains cached, refresh the icon cache (`uicache -a`) or respring.
+- Centers the **USB Charge Control** header at the top.
+- Removes the obsolete `551UK • Dopamine rootless • iOS 16` subtitle completely.
+- Keeps **CHARGING CURRENT CAP** blue, with the selected value right-aligned on the same row.
+- Aligns the 500mA and 2400mA labels with the left and right ends of the slider, respectively.
+- Shows a persistent tappable **GitHub Repository ↗** link at the bottom of the app.
+- Uses **USB Charge Control** as the app name and Sileo package title, with a brief package description.
 
-The `payload/` directory contains all files for reproduction and all maintainer scripts. Rebuild on Linux using `python3 build_usb_v088.py` (requires dpkg-deb). The source `.m` is bundled for reference; no recompilation is needed as this release does not alter the executable.
+Charging controller, charging watchdog, USB current-limit and restore logic, and the one-app fix from v0.8.8 are unchanged. No new diagnostics UI or additional app is installed.
 
-Known good v0.8.4 backup is still preserved in ChatGPT Library: `/551UK USB Charge Control/Known Good v0.8.4/`.
+## Rebuilding
+
+The full release source ZIP includes the complete package `payload/`, UIKit source and compiled arm64 UIKit executable, and the package scripts. To rebuild the DEB on Linux, extract the source ZIP and run `python3 build_usb_v089.py` (requires `dpkg-deb`). The UIKit executable is built in the repository's macOS GitHub Actions workflow with the Apple iOS SDK. On installation, the existing `postinst` signs it using `ldid`, as for previous versions.
+
+## Safety
+
+Actual power readings may take 15–20 seconds to update as iOS reports telemetry; a changed cap does not imply instant refreshed telemetry. A 2400mA cap is a ceiling, not a request to force faster charging.
