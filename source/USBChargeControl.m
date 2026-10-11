@@ -78,7 +78,11 @@ static UIColor *rgb(CGFloat r,CGFloat g,CGFloat b){return [UIColor colorWithRed:
     // Equal 20pt gaps above the two blue section headings.
     self.statusLabel=[self makeLabel:@"Connecting to charging controller…" font:13 y:94 color:cyan];
     self.statusLabel.frame=CGRectMake(18,94,330,36);
-    [self makeLabel:@"CHARGING DATA" font:13 y:150 color:cyan].frame=CGRectMake(18,150,330,24);
+    // Both section headings have the same blue 15pt semibold typography.
+    UIFont *sectionHeadingFont=[UIFont systemFontOfSize:15 weight:UIFontWeightSemibold];
+    UILabel *dataTitle=[self makeLabel:@"CHARGING DATA" font:15 y:150 color:cyan];
+    dataTitle.font=sectionHeadingFont;
+    dataTitle.frame=CGRectMake(18,150,330,24);
     // Uniform 16pt, medium-weight and white readouts. The input-rail mA
     // number alone remains green so the key value stands out.
     self.chargerLabel=[self makeLabel:@"Charger Rating: —" font:16 y:178 color:white];
@@ -93,8 +97,12 @@ static UIColor *rgb(CGFloat r,CGFloat g,CGFloat b){return [UIColor colorWithRed:
     self.chargingVoltageLabel=[self makeLabel:@"Charging: — | USB Voltage: —" font:16 y:306 color:white];
     self.chargingVoltageLabel.frame=CGRectMake(18,306,330,30);
     // Last data row ends at 336; 20pt gap before the blue cap heading.
-    self.capTitleLabel=[self makeLabel:@"CHARGING CURRENT CAP" font:13 y:356 color:cyan];
+    self.capTitleLabel=[self makeLabel:@"CHARGING CURRENT CAP" font:15 y:356 color:cyan];
+    self.capTitleLabel.font=sectionHeadingFont;
     self.capTitleLabel.numberOfLines=1;
+    // Scale slightly only if needed to avoid truncation on a narrower iPhone.
+    self.capTitleLabel.adjustsFontSizeToFitWidth=YES;
+    self.capTitleLabel.minimumScaleFactor=0.9;
     self.capLabel=[self makeLabel:@"Selected: 1000 mA" font:14 y:356 color:white];
     self.capLabel.numberOfLines=1;
     self.capLabel.textAlignment=NSTextAlignmentRight;

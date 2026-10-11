@@ -1,6 +1,6 @@
 # USB Charge Control — iOS 16 (rootless)
 
-**Current version: v0.8.15.** A native UIKit charging-control app by 551UK for supported Dopamine rootless iOS 16 jailbreaks.
+**Current version: v0.8.16.** A native UIKit charging-control app by 551UK for supported Dopamine rootless iOS 16 jailbreaks.
 
 [**Download latest DEB and source**](https://github.com/551UK/Charger-Control-iOS16/releases/latest)
 
@@ -11,7 +11,13 @@
 - Persistent current control and independent safety watchdog.
 - One native app only, without the obsolete USB Diagnostics icon.
 
-## What's new in v0.8.15
+## What's new in v0.8.16
+
+- Made both blue section headings **CHARGING DATA** and **CHARGING CURRENT CAP** identical **15 pt semibold** headings.
+- Kept the original blue colour, both 20-point section gaps, and the selected mA value on the same line.
+- Preserved all readings, green Input Rail mA and charging controls.
+
+## Previously in v0.8.15
 
 - Moved the centered USB Charge Control title down 8 points.
 - Increased the gaps above both blue section headings to 20 points.
@@ -66,6 +72,6 @@
 - [Source and DEB archive](dist/)
 - [Known-good v0.8.4 backup](backups/)
 
-The v0.8.15 source ZIP contains the complete DEB payload, native source, executable and scripts. The GitHub Actions workflow builds the arm64 native app using the iOS SDK, packages the rootless DEB, publishes the release and commits binaries to `dist/`. To reproduce the package from the archive, run `python3 build_usb.py` on Linux with `dpkg-deb` installed.
+The v0.8.16 source ZIP contains the complete DEB payload, native source, executable and scripts. The GitHub Actions workflow builds the arm64 native app using the iOS SDK, packages the rootless DEB, publishes the release and commits binaries to `dist/`. To reproduce the package from the archive, run `python3 build_usb.py` on Linux with `dpkg-deb` installed.
 
 **Safety:** 2400mA is a cap ceiling, not a forced charging speed. The app does not spoof temperatures or throttle CPU/GPU. Restoring a software cap does not necessarily instantly change hardware charging behaviour.
