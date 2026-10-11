@@ -76,7 +76,7 @@ jobs:
           mv 551UK-USB-Charge-Control-v0.8.13.deb "$GITHUB_WORKSPACE/dist/"
           zip -q -r "$GITHUB_WORKSPACE/dist/551UK-USB-Charge-Control-v0.8.13-Source.zip" .
           cd "$GITHUB_WORKSPACE"
-          test "$(dpkg-deb -f dist/551UK-USB-Charge-Control-v0.8.13.deb Version)" = '0.8.12'
+          test "$(dpkg-deb -f dist/551UK-USB-Charge-Control-v0.8.13.deb Version)" = '0.8.13'
           test "$(dpkg-deb -f dist/551UK-USB-Charge-Control-v0.8.13.deb Name)" = 'USB Charge Control'
           python3 - <<'PY'
           import plistlib, subprocess, tempfile, pathlib
@@ -92,7 +92,7 @@ jobs:
               assert info['CFBundleName']=='Charge Control'
               assert info['CFBundleExecutable']=='USBChargeControl'
               assert info['CFBundleIdentifier']=='uk.551.usbchargecontrol'
-              assert info['CFBundleVersion']=='0.8.12'
+              assert info['CFBundleVersion']=='0.8.13'
           PY
           unzip -t dist/551UK-USB-Charge-Control-v0.8.13-Source.zip | tail -1
       - name: Commit compiled files to main
