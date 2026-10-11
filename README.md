@@ -1,6 +1,6 @@
 # USB Charge Control — iOS 16 (rootless)
 
-**Current version: v0.8.12.** A native UIKit charging-control app by 551UK for supported Dopamine rootless iOS 16 jailbreaks.
+**Current version: v0.8.13.** A native UIKit charging-control app by 551UK for supported Dopamine rootless iOS 16 jailbreaks.
 
 [**Download latest DEB and source**](https://github.com/551UK/Charger-Control-iOS16/releases/latest)
 
@@ -11,7 +11,14 @@
 - Persistent current control and independent safety watchdog.
 - One native app only, without the obsolete USB Diagnostics icon.
 
-## What's new in v0.8.12
+## What's new in v0.8.13
+
+- **Charger Connected** and successful **mA cap applied** controller statuses are green during live refreshes; disconnection and errors remain red.
+- Centered title lowered by four points.
+- Equal compact spacing around the **CHARGING DATA** and **CHARGING CURRENT CAP** blue section headings.
+- GitHub release has no description. Only the newest DEB is kept in `dist/` and earlier release DEB assets are removed, while historical source ZIPs and backups remain intact.
+
+## Previously in v0.8.12
 
 - Reduced the gap between connection/charger status and the **CHARGING DATA** heading.
 - Removed the bottom **Charger Rating is iOS-reported…** paragraph and the **2400mA is a ceiling…** line in the app (the technical safety note remains here in the README).
@@ -47,6 +54,6 @@
 - [Source and DEB archive](dist/)
 - [Known-good v0.8.4 backup](backups/)
 
-The v0.8.12 source ZIP contains the complete DEB payload, native source, executable and scripts. The GitHub Actions workflow builds the arm64 native app using the iOS SDK, packages the rootless DEB, publishes the release and commits binaries to `dist/`. To reproduce the package from the archive, run `python3 build_usb_v0812.py` on Linux with `dpkg-deb` installed.
+The v0.8.13 source ZIP contains the complete DEB payload, native source, executable and scripts. The GitHub Actions workflow builds the arm64 native app using the iOS SDK, packages the rootless DEB, publishes the release and commits binaries to `dist/`. To reproduce the package from the archive, run `python3 build_usb_v0813.py` on Linux with `dpkg-deb` installed.
 
 **Safety:** 2400mA is a cap ceiling, not a forced charging speed. The app does not spoof temperatures or throttle CPU/GPU. Restoring a software cap does not necessarily instantly change hardware charging behaviour.

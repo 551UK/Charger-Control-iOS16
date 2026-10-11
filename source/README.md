@@ -1,8 +1,14 @@
-# USB Charge Control v0.8.12 — UIKit layout update
+# USB Charge Control v0.8.13 — UIKit layout update
 
 A rootless iOS 16/Dopamine native app for adjustable USB charge-current caps and charging power telemetry.
 
-## New in v0.8.12
+## New in v0.8.13
+
+- Connected charger and successful current-cap status messages now display green through automatic refresh; genuine errors stay red.
+- Lowered the centered title four points and harmonized the two blue section heading margins.
+- No controller, restore or watchdog changes.
+
+## Previously in v0.8.12
 
 - Tightens the spacing from charger status to **CHARGING DATA**, preserving room for two-line status messages.
 - Removes the explanatory **2400mA is a ceiling…** and **Charger Rating is iOS-reported…** texts from the native app.
@@ -32,7 +38,7 @@ Charging controller, charging watchdog, USB current-limit and restore logic, and
 
 ## Rebuilding
 
-The full release source ZIP includes the complete package `payload/`, UIKit source and compiled arm64 UIKit executable, and the package scripts. To rebuild the DEB on Linux, extract the source ZIP and run `python3 build_usb_v0812.py` (requires `dpkg-deb`). The UIKit executable is built in the repository's macOS GitHub Actions workflow with the Apple iOS SDK. On installation, the existing `postinst` signs it using `ldid`, as for previous versions.
+The full release source ZIP includes the complete package `payload/`, UIKit source and compiled arm64 UIKit executable, and the package scripts. To rebuild the DEB on Linux, extract the source ZIP and run `python3 build_usb_v0813.py` (requires `dpkg-deb`). The UIKit executable is built in the repository's macOS GitHub Actions workflow with the Apple iOS SDK. On installation, the existing `postinst` signs it using `ldid`, as for previous versions.
 
 ## Safety
 

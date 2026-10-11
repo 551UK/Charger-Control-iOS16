@@ -72,50 +72,50 @@ static UIColor *rgb(CGFloat r,CGFloat g,CGFloat b){return [UIColor colorWithRed:
     [self.view addSubview:self.scroll];
     UIColor *white=rgb(.95,.97,1),*mute=rgb(.6,.68,.79),*cyan=rgb(.40,.82,1);
     // Centered app heading, without the obsolete 551UK/Dopamine/iOS subtitle.
-    UILabel *heading=[self makeLabel:@"USB Charge Control" font:27 y:28 color:white];
+    UILabel *heading=[self makeLabel:@"USB Charge Control" font:27 y:32 color:white];
     heading.textAlignment=NSTextAlignmentCenter;
     heading.numberOfLines=1;
-    // Keep up to two lines of connection/cap status, closer to CHARGING DATA.
-    self.statusLabel=[self makeLabel:@"Connecting to charging controller…" font:13 y:78 color:cyan];
-    self.statusLabel.frame=CGRectMake(18,78,330,40);
-    [self makeLabel:@"CHARGING DATA" font:13 y:116 color:cyan].frame=CGRectMake(18,116,330,28);
+    // Match 8pt gaps above both blue section headings; keep status two-line capable.
+    self.statusLabel=[self makeLabel:@"Connecting to charging controller…" font:13 y:85 color:cyan];
+    self.statusLabel.frame=CGRectMake(18,85,330,36);
+    [self makeLabel:@"CHARGING DATA" font:13 y:129 color:cyan].frame=CGRectMake(18,129,330,24);
     // Compact readouts; retain each live value, font and colour.
-    self.chargerLabel=[self makeLabel:@"Charger Rating: —" font:16 y:146 color:white];
-    self.chargerLabel.frame=CGRectMake(18,146,330,30);
-    self.inputLabel=[self makeLabel:@"Input Rail: — W  |  — mA" font:18 y:178 color:white];
-    self.inputLabel.frame=CGRectMake(18,178,330,30);
+    self.chargerLabel=[self makeLabel:@"Charger Rating: —" font:16 y:157 color:white];
+    self.chargerLabel.frame=CGRectMake(18,157,330,30);
+    self.inputLabel=[self makeLabel:@"Input Rail: — W  |  — mA" font:18 y:189 color:white];
+    self.inputLabel.frame=CGRectMake(18,189,330,30);
     [self setInputRailWatts:@"— W" current:@"— mA"];
-    self.batteryLabel=[self makeLabel:@"Battery: — W  |  — mA" font:18 y:210 color:white];
-    self.batteryLabel.frame=CGRectMake(18,210,330,30);
-    self.chargingVoltageLabel=[self makeLabel:@"Charging: — | USB Voltage: —" font:15 y:242 color:mute];
-    self.chargingVoltageLabel.frame=CGRectMake(18,242,330,30);
-    self.effectiveLabel=[self makeLabel:@"Current USB limit: —" font:15 y:274 color:white];
-    self.effectiveLabel.frame=CGRectMake(18,274,330,30);
+    self.batteryLabel=[self makeLabel:@"Battery: — W  |  — mA" font:18 y:221 color:white];
+    self.batteryLabel.frame=CGRectMake(18,221,330,30);
+    self.chargingVoltageLabel=[self makeLabel:@"Charging: — | USB Voltage: —" font:15 y:253 color:mute];
+    self.chargingVoltageLabel.frame=CGRectMake(18,253,330,30);
+    self.effectiveLabel=[self makeLabel:@"Current USB limit: —" font:15 y:285 color:white];
+    self.effectiveLabel.frame=CGRectMake(18,285,330,30);
     // Current cap and selected value stay on one row, with the title cyan.
-    self.capTitleLabel=[self makeLabel:@"CHARGING CURRENT CAP" font:13 y:316 color:cyan];
+    self.capTitleLabel=[self makeLabel:@"CHARGING CURRENT CAP" font:13 y:323 color:cyan];
     self.capTitleLabel.numberOfLines=1;
-    self.capLabel=[self makeLabel:@"Selected: 1000 mA" font:14 y:316 color:white];
+    self.capLabel=[self makeLabel:@"Selected: 1000 mA" font:14 y:323 color:white];
     self.capLabel.numberOfLines=1;
     self.capLabel.textAlignment=NSTextAlignmentRight;
-    self.currentSlider=[[UISlider alloc]initWithFrame:CGRectMake(18,355,330,34)];
+    self.currentSlider=[[UISlider alloc]initWithFrame:CGRectMake(18,362,330,34)];
     self.currentSlider.minimumValue=500;self.currentSlider.maximumValue=2400;self.currentSlider.value=1000;
     [self.currentSlider addTarget:self action:@selector(sliderChanged:) forControlEvents:UIControlEventValueChanged];
     [self.currentSlider addTarget:self action:@selector(sliderDone:) forControlEvents:UIControlEventTouchUpInside|UIControlEventTouchUpOutside];
     [self.scroll addSubview:self.currentSlider];
-    self.minCapLabel=[self makeLabel:@"500mA" font:12 y:383 color:mute];
-    self.maxCapLabel=[self makeLabel:@"2400mA" font:12 y:383 color:mute];
+    self.minCapLabel=[self makeLabel:@"500mA" font:12 y:392 color:mute];
+    self.maxCapLabel=[self makeLabel:@"2400mA" font:12 y:392 color:mute];
     self.minCapLabel.numberOfLines=1;
     self.maxCapLabel.numberOfLines=1;
     self.maxCapLabel.textAlignment=NSTextAlignmentRight;
-    [self makeLabel:@"Enable current limit" font:17 y:417 color:white].frame=CGRectMake(18,417,220,38);
-    self.enableSwitch=[[UISwitch alloc]initWithFrame:CGRectMake(274,418,55,36)];
+    [self makeLabel:@"Enable current limit" font:17 y:426 color:white].frame=CGRectMake(18,426,220,38);
+    self.enableSwitch=[[UISwitch alloc]initWithFrame:CGRectMake(274,427,55,36)];
     [self.enableSwitch addTarget:self action:@selector(toggleChanged:) forControlEvents:UIControlEventValueChanged];
     [self.scroll addSubview:self.enableSwitch];
-    self.applyButton=[self makeButton:@"Apply selected current" y:473 color:rgb(.08,.45,.77) action:@selector(applyTapped:)];
-    self.restoreButton=[self makeButton:@"Restore normal charging" y:533 color:rgb(.39,.20,.23) action:@selector(restoreTapped:)];
+    self.applyButton=[self makeButton:@"Apply selected current" y:482 color:rgb(.08,.45,.77) action:@selector(applyTapped:)];
+    self.restoreButton=[self makeButton:@"Restore normal charging" y:542 color:rgb(.39,.20,.23) action:@selector(restoreTapped:)];
     // Keep the short iOS telemetry delay disclaimer, but remove the other two explanatory paragraphs.
-    [self makeLabel:@"Live power readings may take 15–20 seconds to update while waiting for iOS telemetry. USB cap confirmation is separate from these readings." font:12 y:594 color:mute].frame=CGRectMake(18,594,330,66);
-    self.scroll.contentSize=CGSizeMake(365,675);
+    [self makeLabel:@"Live power readings may take 15–20 seconds to update while waiting for iOS telemetry. USB cap confirmation is separate from these readings." font:12 y:601 color:mute].frame=CGRectMake(18,601,330,66);
+    self.scroll.contentSize=CGSizeMake(365,682);
     // Keep the repository link visible at the bottom, even when the data scrolls.
     self.githubButton=[UIButton buttonWithType:UIButtonTypeSystem];
     self.githubButton.backgroundColor=rgb(.05,.075,.12);
@@ -140,13 +140,13 @@ static UIColor *rgb(CGFloat r,CGFloat g,CGFloat b){return [UIColor colorWithRed:
     }
     // Fit the cyan heading and selected current side-by-side on one row.
     CGFloat selectedWidth=MIN(144,usable*.43);
-    self.capTitleLabel.frame=CGRectMake(18,316,usable-selectedWidth-4,32);
-    self.capLabel.frame=CGRectMake(18+usable-selectedWidth,316,selectedWidth,32);
+    self.capTitleLabel.frame=CGRectMake(18,323,usable-selectedWidth-4,32);
+    self.capLabel.frame=CGRectMake(18+usable-selectedWidth,323,selectedWidth,32);
     // Align endpoint captions with the slider track, not the middle of the screen.
-    self.minCapLabel.frame=CGRectMake(18,383,94,24);
-    self.maxCapLabel.frame=CGRectMake(w-18-94,383,94,24);
+    self.minCapLabel.frame=CGRectMake(18,392,94,24);
+    self.maxCapLabel.frame=CGRectMake(w-18-94,392,94,24);
     self.githubButton.frame=CGRectMake(18,CGRectGetMaxY(self.view.safeAreaLayoutGuide.layoutFrame)-46,usable,42);
-    self.scroll.contentSize=CGSizeMake(w,675);
+    self.scroll.contentSize=CGSizeMake(w,682);
 }
 - (void)openRepository:(id)sender{
     (void)sender;
@@ -206,7 +206,15 @@ static UIColor *rgb(CGFloat r,CGFloat g,CGFloat b){return [UIColor colorWithRed:
     BOOL enabled=[d[@"enabled"] respondsToSelector:@selector(boolValue)]&&[d[@"enabled"] boolValue];
     [self.enableSwitch setOn:enabled animated:NO];
     NSString *msg=[d[@"message"] isKindOfClass:NSString.class]?d[@"message"]:@"";
-    [self presentStatus:msg.length?msg:(enabled?@"USB current cap ACTIVE":@"Normal charging / no cap active") ok:msg.length==0];
+    // Informational controller messages are not failures.
+    NSString *status=msg.length?msg:(enabled?@"USB current cap ACTIVE":@"Normal charging / no cap active");
+    NSString *lower=status.lowercaseString;
+    BOOL positive=[lower hasPrefix:@"charger connected"]
+        || [lower containsString:@"cap applied"]
+        || [lower containsString:@"usb cap active"]
+        || [lower containsString:@"normal charging"]
+        || [lower containsString:@"no cap active"];
+    [self presentStatus:status ok:positive];
 }
 - (void)sendAction:(NSString*)cmd success:(NSString*)name{
     if(self.busy)return;self.busy=YES;[self presentStatus:[NSString stringWithFormat:@"%@…",name] ok:YES];
