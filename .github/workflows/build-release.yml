@@ -1,6 +1,13 @@
-name: Build and release USB Charge Control v0.8.11
+name: Build and release USB Charge Control v0.8.15
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'source/USBChargeControl.m'
+      - 'source/payload/var/jb/Applications/USBChargeControl.app/Info.plist'
+      - 'source/payload/DEBIAN/control'
+      - 'source/build_usb.py'
   workflow_dispatch:
 
 permissions:
@@ -28,7 +35,7 @@ jobs:
           test -s USBChargeControl
       - uses: actions/upload-artifact@v4
         with:
-          name: native-arm64-app-v0811
+          name: native-arm64-app-v0815
           path: USBChargeControl
           if-no-files-found: error
           retention-days: 7
@@ -42,35 +49,36 @@ jobs:
           persist-credentials: true
       - uses: actions/download-artifact@v4
         with:
-          name: native-arm64-app-v0811
+          name: native-arm64-app-v0815
           path: ${{ runner.temp }}/compiled
       - name: Build DEB and complete source ZIP
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/v0811-source" "$GITHUB_WORKSPACE/dist"
-          cd "$RUNNER_TEMP/v0811-source"
-          unzip -q "$GITHUB_WORKSPACE/dist/551UK-USB-Charge-Control-v0.8.10-Source.zip"
+          mkdir -p "$RUNNER_TEMP/v0815-source" "$GITHUB_WORKSPACE/dist"
+          cd "$RUNNER_TEMP/v0815-source"
+          unzip -q "$GITHUB_WORKSPACE/dist/551UK-USB-Charge-Control-v0.8.14-Source.zip"
           cp "$GITHUB_WORKSPACE/source/USBChargeControl.m" USBChargeControl.m
-          cp "$GITHUB_WORKSPACE/source/Info.plist" Info.plist
-          cp "$GITHUB_WORKSPACE/source/control" control
+          cp "$GITHUB_WORKSPACE/source/payload/var/jb/Applications/USBChargeControl.app/Info.plist" Info.plist
+          cp "$GITHUB_WORKSPACE/source/payload/DEBIAN/control" control
           cp "$GITHUB_WORKSPACE/source/payload/DEBIAN/control" payload/DEBIAN/control
           cp "$GITHUB_WORKSPACE/source/payload/var/jb/Applications/USBChargeControl.app/Info.plist" payload/var/jb/Applications/USBChargeControl.app/Info.plist
-          cp "$GITHUB_WORKSPACE/source/README.md" README.md
-          cp "$GITHUB_WORKSPACE/source/build_usb_v0811.py" build_usb_v0811.py
-          rm -f build_usb_v088.py build_usb_v089.py
+          cp "$GITHUB_WORKSPACE/README.md" README.md
+          cp "$GITHUB_WORKSPACE/source/build_usb.py" build_usb.py
+          rm -f build_usb_v*.py postinst postrm preinst prerm
+          rm -f payload/var/jb/usr/share/doc/uk.551.chargingratetest/README.md
           cp "$RUNNER_TEMP/compiled/USBChargeControl" USBChargeControl
           cp USBChargeControl payload/var/jb/Applications/USBChargeControl.app/USBChargeControl
           chmod 755 USBChargeControl payload/var/jb/Applications/USBChargeControl.app/USBChargeControl
-          python3 build_usb_v0811.py
-          mv 551UK-USB-Charge-Control-v0.8.11.deb "$GITHUB_WORKSPACE/dist/"
-          zip -q -r "$GITHUB_WORKSPACE/dist/551UK-USB-Charge-Control-v0.8.11-Source.zip" .
+          python3 build_usb.py
+          mv 551UK-USB-Charge-Control-v0.8.15.deb "$GITHUB_WORKSPACE/dist/"
+          zip -q -r "$GITHUB_WORKSPACE/dist/551UK-USB-Charge-Control-v0.8.15-Source.zip" .
           cd "$GITHUB_WORKSPACE"
-          test "$(dpkg-deb -f dist/551UK-USB-Charge-Control-v0.8.11.deb Version)" = '0.8.11'
-          test "$(dpkg-deb -f dist/551UK-USB-Charge-Control-v0.8.11.deb Name)" = 'USB Charge Control'
+          test "$(dpkg-deb -f dist/551UK-USB-Charge-Control-v0.8.15.deb Version)" = '0.8.15'
+          test "$(dpkg-deb -f dist/551UK-USB-Charge-Control-v0.8.15.deb Name)" = 'USB Charge Control'
           python3 - <<'PY'
           import plistlib, subprocess, tempfile, pathlib
-          deb = 'dist/551UK-USB-Charge-Control-v0.8.11.deb'
+          deb = 'dist/551UK-USB-Charge-Control-v0.8.15.deb'
           listing = subprocess.check_output(['dpkg-deb','--contents',deb], text=True)
           assert 'Applications/ChargingRate.app' not in listing
           assert 'Applications/USBChargeControl.app' in listing
@@ -82,29 +90,48 @@ jobs:
               assert info['CFBundleName']=='Charge Control'
               assert info['CFBundleExecutable']=='USBChargeControl'
               assert info['CFBundleIdentifier']=='uk.551.usbchargecontrol'
-              assert info['CFBundleVersion']=='0.8.11'
+              assert info['CFBundleVersion']=='0.8.15'
           PY
-          unzip -t dist/551UK-USB-Charge-Control-v0.8.11-Source.zip | tail -1
+          unzip -t dist/551UK-USB-Charge-Control-v0.8.15-Source.zip | tail -1
       - name: Commit compiled files to main
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add dist/551UK-USB-Charge-Control-v0.8.11.deb dist/551UK-USB-Charge-Control-v0.8.11-Source.zip
+          # Only keep the newest DEB and full source ZIP in main.
+          find dist -maxdepth 1 -type f \( -name '*.deb' -o -name '*-Source.zip' \) \
+            ! -name '551UK-USB-Charge-Control-v0.8.15.deb' \
+            ! -name '551UK-USB-Charge-Control-v0.8.15-Source.zip' -print0 |
+            xargs -0 -r git rm -f --
+          git add dist/551UK-USB-Charge-Control-v0.8.15.deb dist/551UK-USB-Charge-Control-v0.8.15-Source.zip
           if ! git diff --cached --quiet; then
-            git commit -m 'Add compiled v0.8.11 DEB and source archive'
+            git commit -m 'Add compiled v0.8.15 DEB and source archive'
             git push origin HEAD:main
           fi
-      - name: Publish v0.8.11 release
+      - name: Publish v0.8.15 release
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
-          files=(dist/551UK-USB-Charge-Control-v0.8.11.deb dist/551UK-USB-Charge-Control-v0.8.11-Source.zip)
-          if gh release view v0.8.11 >/dev/null 2>&1; then
-            gh release upload v0.8.11 "${files[@]}" --clobber
+          files=(dist/551UK-USB-Charge-Control-v0.8.15.deb dist/551UK-USB-Charge-Control-v0.8.15-Source.zip)
+          if gh release view v0.8.15 >/dev/null 2>&1; then
+            gh release upload v0.8.15 "${files[@]}" --clobber
           else
-            gh release create v0.8.11 "${files[@]}" --title 'v0.8.11 — App Label and Charging Data Layout' --notes-file RELEASE_NOTES_v0.8.11.md
+            gh release create v0.8.15 "${files[@]}" --title 'v0.8.15' --notes ''
           fi
+      - name: Keep only the newest GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          keep="$(gh api "repos/$GH_REPO/releases/latest" --jq '.tag_name')"
+          test "$keep" = "v0.8.15"
+          gh release list --limit 1000 --json tagName --jq '.[].tagName' | while IFS= read -r tag; do
+            [ -n "$tag" ] || continue
+            [ "$tag" = "$keep" ] && continue
+            gh release delete "$tag" --yes
+          done
