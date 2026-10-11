@@ -1,4 +1,4 @@
-# 551UK USB Charge Control — iOS 16 rootless
+### USB Charge Control 
 
 Native Charge Control app for jailbroken iOS 16 (Dopamine rootless)
 
