@@ -10,7 +10,6 @@ on:
       - 'source/control'
       - 'source/payload/DEBIAN/control'
       - 'source/build_usb_v0814.py'
-      - '.github/workflows/build-release-0814.yml'
   workflow_dispatch:
 
 permissions:
@@ -120,18 +119,17 @@ jobs:
           else
             gh release create v0.8.14 "${files[@]}" --title 'v0.8.14' --notes ''
           fi
-      - name: Remove DEB assets from older releases
+      - name: Keep only the newest GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         shell: bash
         run: |
           set -euo pipefail
-          # Do not delete historical release pages or source ZIPs.
+          keep="$(gh api "repos/$GH_REPO/releases/latest" --jq '.tag_name')"
+          test "$keep" = "v0.8.14"
           gh release list --limit 1000 --json tagName --jq '.[].tagName' | while IFS= read -r tag; do
-            [ "$tag" = "v0.8.14" ] && continue
-            gh release view "$tag" --json assets --jq '.assets[].name | select(endswith(".deb"))' |
-            while IFS= read -r asset; do
-              [ -n "$asset" ] || continue
-              gh release delete-asset "$tag" "$asset" --yes
-            done
+            [ -n "$tag" ] || continue
+            [ "$tag" = "$keep" ] && continue
+            gh release delete "$tag" --yes
           done

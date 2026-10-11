@@ -1,0 +1,35 @@
+name: Keep only latest GitHub Release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/cleanup-old-releases.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  remove-obsolete-release-pages:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove older GitHub Releases but retain source code and history
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          keep="$(gh api "repos/$GH_REPO/releases/latest" --jq '.tag_name')"
+          test "$keep" = "v0.8.14"
+          echo "Retaining release: $keep"
+          gh release list --limit 1000 --json tagName --jq '.[].tagName' | while IFS= read -r tag; do
+            [ -n "$tag" ] || continue
+            [ "$tag" = "$keep" ] && continue
+            echo "Removing obsolete release: $tag"
+            gh release delete "$tag" --yes
+          done
+          # Release tags are retained, as are source archives and old Git commits.
+          remaining="$(gh release list --limit 1000 --json tagName --jq '.[].tagName')"
+          test "$remaining" = "$keep"
