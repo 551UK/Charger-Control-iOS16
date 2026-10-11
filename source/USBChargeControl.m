@@ -81,6 +81,7 @@ static UIColor *rgb(CGFloat r,CGFloat g,CGFloat b){return [UIColor colorWithRed:
     // Compact CHARGING DATA spacing; battery percentage omitted from the UI.
     self.chargerLabel=[self makeLabel:@"Charger Rating: —" font:16 y:175 color:white];
     self.inputLabel=[self makeLabel:@"Input Rail: — W  |  — mA" font:18 y:208 color:white];
+    [self setInputRailWatts:@"— W" current:@"— mA"];
     self.batteryLabel=[self makeLabel:@"Battery: — W  |  — mA" font:18 y:241 color:white];
     self.chargingVoltageLabel=[self makeLabel:@"Charging: — | USB Voltage: —" font:15 y:274 color:mute];
     self.effectiveLabel=[self makeLabel:@"Current USB limit: —" font:15 y:307 color:white];
@@ -148,6 +149,21 @@ static UIColor *rgb(CGFloat r,CGFloat g,CGFloat b){return [UIColor colorWithRed:
     NSURL *url=[NSURL URLWithString:@"https://github.com/551UK/Charger-Control-iOS16"];
     [[UIApplication sharedApplication] openURL:url options:@{} completionHandler:nil];
 }
+- (void)setInputRailWatts:(NSString *)power current:(NSString *)current{
+    // Keep the rail label and watts white, but make the live mA value
+    // green at all times, including the initial/unavailable placeholder.
+    NSString *prefix=[NSString stringWithFormat:@"Input Rail: %@  |  ",power];
+    NSMutableAttributedString *line=[[NSMutableAttributedString alloc]
+        initWithString:[prefix stringByAppendingString:current]
+        attributes:@{
+            NSForegroundColorAttributeName: rgb(.95,.97,1),
+            NSFontAttributeName: self.inputLabel.font
+        }];
+    [line addAttribute:NSForegroundColorAttributeName
+        value:rgb(.38,.87,.65)
+        range:NSMakeRange(prefix.length,current.length)];
+    self.inputLabel.attributedText=line;
+}
 - (NSInteger)selectedMA{return (NSInteger)(roundf(self.currentSlider.value/100.0f)*100);}
 - (void)sliderChanged:(id)sender{
     NSInteger ma=[self selectedMA];
@@ -173,7 +189,7 @@ static UIColor *rgb(CGFloat r,CGFloat g,CGFloat b){return [UIColor colorWithRed:
     self.chargerLabel.text=[NSString stringWithFormat:@"Charger Rating: %@",watts(d,@"adapter_w",1)];
     NSNumber *railMA=[d[@"system_ma"] isKindOfClass:NSNumber.class]?d[@"system_ma"]:nil;
     NSString *railMAtext=railMA?[NSString stringWithFormat:@"%.0f mA",railMA.doubleValue]:@"— mA";
-    self.inputLabel.text=[NSString stringWithFormat:@"Input Rail: %@  |  %@",watts(d,@"system_mw",1000),railMAtext];
+    [self setInputRailWatts:watts(d,@"system_mw",1000) current:railMAtext];
     NSNumber *mv=[d[@"battery_mv"] isKindOfClass:NSNumber.class]?d[@"battery_mv"]:nil;
     NSNumber *ma=[d[@"battery_ma"] isKindOfClass:NSNumber.class]?d[@"battery_ma"]:nil;
     NSString *batteryW=mv&&ma?[NSString stringWithFormat:@"%.2f W",mv.doubleValue*ma.doubleValue/1000000.0]:@"— W";
