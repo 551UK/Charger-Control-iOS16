@@ -1,0 +1,32 @@
+name: Publish Charge Control release
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'dist/**'
+      - '.github/workflows/publish.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish-v088:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate package
+        run: |
+          test -s dist/551UK-USB-Charge-Control-v0.8.8-One-App.deb
+          test -s dist/551UK-USB-Charge-Control-v0.8.8-Source.zip
+          test "$(dpkg-deb -f dist/551UK-USB-Charge-Control-v0.8.8-One-App.deb Version)" = "0.8.8"
+      - name: Create or update v0.8.8 Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view v0.8.8 >/dev/null 2>&1; then
+            gh release upload v0.8.8 dist/551UK-USB-Charge-Control-v0.8.8-One-App.deb dist/551UK-USB-Charge-Control-v0.8.8-Source.zip --clobber
+          else
+            gh release create v0.8.8 dist/551UK-USB-Charge-Control-v0.8.8-One-App.deb dist/551UK-USB-Charge-Control-v0.8.8-Source.zip --title "v0.8.8 — One App" --notes-file RELEASE_NOTES_v0.8.8.md
+          fi

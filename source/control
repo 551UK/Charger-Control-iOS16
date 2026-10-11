@@ -1,0 +1,13 @@
+Package: uk.551.chargingratetest
+Name: 551UK USB Charge Control
+Version: 0.8.8
+Architecture: iphoneos-arm64
+Section: Utilities
+Priority: optional
+Maintainer: 551UK
+Author: 551UK
+Depends: python3, ldid
+Description: Native iOS charging current controller with charger, input rail and battery power readings.
+ Persistent adjustable 500–2400mA wired cap, experimental bounded software USB power restart on Restore, independent recovery watchdog and background safety logs.
+ No thermal simulation, CPU/GPU throttling, charging pause or rate-index modification.
+ Native UIKit Charge Control app; immediate USB cap readback, connection feedback and iOS telemetry-delay disclaimer; legacy USB Diagnostics app removed; only Charge Control app installed. No Safari, URLs, or terminal commands required.

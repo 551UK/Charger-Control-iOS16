@@ -1,0 +1,98 @@
+#!/bin/sh
+set +e
+case "$1" in
+ configure)
+  export PATH=/var/jb/usr/bin:/var/jb/bin:/usr/bin:/bin:$PATH
+  root=/var/jb/var/mobile/551UK-ChargeRateTest-v052
+  if [ ! -L "$root" ]; then
+   mkdir -p "$root" >/dev/null 2>&1
+   chown 501:501 "$root" >/dev/null 2>&1; chmod 0700 "$root" >/dev/null 2>&1
+  fi
+  # v0.7.0 launched the root daemon before the mobile app; repair its
+  # root-owned log file so the GUI and daemon use one common log path.
+  if [ ! -L "$root/charging-test.txt" ] && [ -f "$root/charging-test.txt" ]; then
+    chown 501:501 "$root/charging-test.txt" >/dev/null 2>&1 || true
+    chmod 0600 "$root/charging-test.txt" >/dev/null 2>&1 || true
+  fi
+  # Create a PRIVATE executable copy; never modify the global Python 3 binary.
+  # The IOKit userclient authorisation is checked on this executable's identity.
+  python_controller=/var/jb/usr/libexec/551uk-usbcontroller-python
+  python_source=/var/jb/usr/bin/python3
+  python_entitlements=/var/jb/usr/share/uk.551.chargingratetest/usbcontroller-entitlements.plist
+  if [ -e "$python_controller" ] && [ -L "$python_controller" ]; then
+    echo 'ERROR: private Python path is a symlink; refusing install' >> "$root/usb-controller-install.txt"
+    rm -f "$python_controller"
+  fi
+  if [ -x "$python_source" ] && command -v ldid >/dev/null 2>&1 && [ -f "$python_entitlements" ]; then
+    # Resolve versioned /usr/bin/python3 symlink via cp -L; the copy is root-only.
+    if cp -L "$python_source" "$python_controller.tmp"; then
+      chown root:wheel "$python_controller.tmp" >/dev/null 2>&1 || true
+      chmod 0700 "$python_controller.tmp" >/dev/null 2>&1
+      if ldid -S"$python_entitlements" "$python_controller.tmp" >>"$root/usb-controller-install.txt" 2>&1; then
+        mv -f "$python_controller.tmp" "$python_controller"
+        chmod 0700 "$python_controller"
+        echo 'Private Python interpreter signed for IOAccessoryManagerUserClient.' >>"$root/usb-controller-install.txt"
+      else
+        rm -f "$python_controller.tmp"
+        echo 'ERROR: private interpreter could not be signed. Daemon not started.' >>"$root/usb-controller-install.txt"
+      fi
+    else
+      echo 'ERROR: private Python interpreter could not be copied.' >>"$root/usb-controller-install.txt"
+    fi
+  else
+    echo 'ERROR: Python or ldid missing; private interpreter unavailable.' >>"$root/usb-controller-install.txt"
+  fi
+  if command -v ldid >/dev/null 2>&1; then
+   ent=/var/jb/usr/share/uk.551.chargingratetest/jailbreak-entitlements.plist
+   for file in /var/jb/usr/libexec/551uk-charge-rate-worker; do
+    [ -f "$file" ] && ldid -S"$ent" "$file" >/dev/null 2>&1
+   done
+  fi
+  for file in /var/jb/usr/libexec/551uk-charge-rate-worker; do
+   [ -f "$file" ] && chmod 0755 "$file" >/dev/null 2>&1
+  done
+  chmod 0644 /var/jb/Library/LaunchDaemons/uk.551.chargerated.plist >/dev/null 2>&1
+  chmod 0755 /var/jb/usr/libexec/551uk-usb-currentd.py >/dev/null 2>&1
+  log="$root/launchd-install.txt"
+  if [ -L "$log" ]; then rm -f "$log"; fi
+  if [ -x /var/jb/usr/bin/launchctl ] && [ -x "$python_controller" ]; then
+   /var/jb/usr/bin/launchctl bootout system/uk.551.chargerated >/dev/null 2>&1 || true
+   /var/jb/usr/bin/launchctl bootstrap system /var/jb/Library/LaunchDaemons/uk.551.chargerated.plist >"$log" 2>&1
+   code=$?
+   if [ "$code" -ne 0 ]; then
+    /var/jb/usr/bin/launchctl load /var/jb/Library/LaunchDaemons/uk.551.chargerated.plist >>"$log" 2>&1
+    code=$?
+   fi
+   echo "launchd bootstrap result: $code" >>"$log"
+  else
+   echo 'ERROR: Dopamine launchctl or signed private Python missing' >"$log"
+  fi
+  [ -x /var/jb/usr/bin/python3 ] || echo 'ERROR: Python 3 executable missing' >>"$log"
+  chown 501:501 "$log" "$root/usb-controller-install.txt" >/dev/null 2>&1 || true
+  # Remove the old v0.8 browser shortcut. The new UIKit app replaces it.
+  clips=/var/mobile/Library/WebClips/551UKUSBChargeControl.webclip
+  if [ -d "$clips" ] && [ ! -L "$clips" ]; then
+    rm -f "$clips/icon.png" "$clips/Info.plist" >/dev/null 2>&1 || true
+    rmdir "$clips" >/dev/null 2>&1 || true
+  fi
+  if command -v ldid >/dev/null 2>&1; then
+    ldid -S/var/jb/usr/share/uk.551.chargingratetest/jailbreak-entitlements.plist /var/jb/Applications/USBChargeControl.app/USBChargeControl >>"$log" 2>&1 || echo 'WARNING: Native app signing failed' >>"$log"
+  else
+    echo 'ERROR: ldid not installed; cannot sign native Charge Control app.' >>"$log"
+  fi
+  chown -R root:wheel /var/jb/Applications/USBChargeControl.app >/dev/null 2>&1 || true
+  # Remove exactly the retired v0.8.x diagnostics bundle if any files
+  # remain on older installs. Do not delete unknown files or follow symlinks.
+  legacy=/var/jb/Applications/ChargingRate.app
+  if [ -d "$legacy" ] && [ ! -L "$legacy" ]; then
+    rm -f "$legacy/ChargingRate" "$legacy/Info.plist" \
+      "$legacy/AppIcon60x60@2x.png" "$legacy/AppIcon60x60@3x.png" >/dev/null 2>&1 || true
+    rmdir "$legacy" >/dev/null 2>&1 || true
+  fi
+  if command -v uicache >/dev/null 2>&1; then
+    uicache -u "$legacy" >/dev/null 2>&1 || true
+    uicache -p /var/jb/Applications/USBChargeControl.app >>"$log" 2>&1 || true
+  fi
+  ;;
+esac
+exit 0
