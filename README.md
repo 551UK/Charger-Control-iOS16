@@ -24,7 +24,7 @@ If the legacy USB Diagnostics icon lingers after upgrading, refresh the icon cac
 
 ## Source and reproducible packaging
 
-The [source/](source/) directory contains the original UIKit source, Python charging daemon and control UI, installation scripts, supporting files and the complete package payload. Rebuild the distributed DEB on Linux with `python3 source/build_usb_v088.py` (requires `dpkg-deb`); the native executable is bundled so recompilation is not needed for this packaging-only update.
+The [source/](source/) directory contains browsable UIKit and Python source, installation scripts and supporting configuration. The **complete original payload**, including compiled executables and icons, is included in [the v0.8.8 source ZIP](dist/551UK-USB-Charge-Control-v0.8.8-Source.zip). To reproduce the DEB, extract that ZIP into a working directory and run `python3 build_usb_v088.py` there (requires `dpkg-deb`). No native recompilation is needed for this packaging-only update.
 
 The latest v0.8.8 DEB and complete ZIP are also mirrored under [dist/](dist/). The known-good v0.8.4 backup is preserved separately under [backups/](backups/).
 
