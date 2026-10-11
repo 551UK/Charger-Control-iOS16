@@ -1,11 +1,5 @@
 name: Publish Charge Control release
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'dist/**'
-      - '.github/workflows/publish.yml'
   workflow_dispatch:
 
 permissions:

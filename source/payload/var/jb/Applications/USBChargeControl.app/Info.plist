@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDisplayName</key>
-	<string>USB Charge Control</string>
+	<string>Charge Control</string>
 	<key>CFBundleExecutable</key>
 	<string>USBChargeControl</string>
 	<key>CFBundleIconFiles</key>
@@ -25,13 +25,13 @@
 	<key>CFBundleIdentifier</key>
 	<string>uk.551.usbchargecontrol</string>
 	<key>CFBundleName</key>
-	<string>USB Charge Control</string>
+	<string>Charge Control</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.8.9</string>
+	<string>0.8.10</string>
 	<key>CFBundleVersion</key>
-	<string>0.8.9</string>
+	<string>0.8.10</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>LSRequiresIPhoneOS</key>

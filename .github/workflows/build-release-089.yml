@@ -1,14 +1,6 @@
 name: Build and release USB Charge Control v0.8.9
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'source/USBChargeControl.m'
-      - 'source/Info.plist'
-      - 'source/control'
-      - 'source/payload/DEBIAN/control'
-      - '.github/workflows/build-release-089.yml'
   workflow_dispatch:
 
 permissions:
