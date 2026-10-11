@@ -1,6 +1,6 @@
 # USB Charge Control — iOS 16 (rootless)
 
-**Current version: v0.8.17.** A native UIKit charging-control app by 551UK for supported Dopamine rootless iOS 16 jailbreaks.
+**Current version: v0.8.18.** A native UIKit charging-control app by 551UK for supported Dopamine rootless iOS 16 jailbreaks.
 
 [**Download latest DEB and source**](https://github.com/551UK/Charger-Control-iOS16/releases/latest)
 
@@ -11,7 +11,12 @@
 - Persistent current control and independent safety watchdog.
 - One native app only, without the obsolete USB Diagnostics icon.
 
-## What's new in v0.8.17
+## What's new in v0.8.18
+
+- Centered the shared charger status text area so **Charger Disconnected**, **Charger Connected**, cap-applied, restore, waiting, offline and error messages are horizontally centred.
+- Status colours, position, dimensions, line wrapping, live updates and charging functionality are unchanged.
+
+## Previously in v0.8.17
 
 - Simplified the in-app telemetry notice: **Live power readings and the displayed USB current cap may take 15–20 seconds to update while iOS telemetry catches up.**
 - Removed the statement that USB cap confirmation is separate from the live readings.
@@ -78,6 +83,6 @@
 - [Source and DEB archive](dist/)
 - [Known-good v0.8.4 backup](backups/)
 
-The v0.8.17 source ZIP contains the complete DEB payload, native source, executable and scripts. The GitHub Actions workflow builds the arm64 native app using the iOS SDK, packages the rootless DEB, publishes the release and commits binaries to `dist/`. To reproduce the package from the archive, run `python3 build_usb.py` on Linux with `dpkg-deb` installed.
+The v0.8.18 source ZIP contains the complete DEB payload, native source, executable and scripts. The GitHub Actions workflow builds the arm64 native app using the iOS SDK, packages the rootless DEB, publishes the release and commits binaries to `dist/`. To reproduce the package from the archive, run `python3 build_usb.py` on Linux with `dpkg-deb` installed.
 
 **Safety:** 2400mA is a cap ceiling, not a forced charging speed. The app does not spoof temperatures or throttle CPU/GPU. Restoring a software cap does not necessarily instantly change hardware charging behaviour.

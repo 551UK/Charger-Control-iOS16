@@ -77,6 +77,8 @@ static UIColor *rgb(CGFloat r,CGFloat g,CGFloat b){return [UIColor colorWithRed:
     heading.numberOfLines=1;
     // Equal 20pt gaps above the two blue section headings.
     self.statusLabel=[self makeLabel:@"Connecting to charging controller…" font:13 y:94 color:cyan];
+    // Center every state, error and action message shown in this shared status area.
+    self.statusLabel.textAlignment=NSTextAlignmentCenter;
     self.statusLabel.frame=CGRectMake(18,94,330,36);
     // Both section headings have the same blue 15pt semibold typography.
     UIFont *sectionHeadingFont=[UIFont systemFontOfSize:15 weight:UIFontWeightSemibold];
