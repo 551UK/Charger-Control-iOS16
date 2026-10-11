@@ -1,4 +1,4 @@
-### USB Charge Control 
+## USB Charge Control 
 
 Native Charge Control app for jailbroken iOS 16 (Dopamine rootless)
 
