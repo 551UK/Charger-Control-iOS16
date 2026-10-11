@@ -1,6 +1,6 @@
 # USB Charge Control
 
-USB Charge Control lets you set a maximum wired USB charging current on supported jailbroken iPhones (iOS 16, Dopamine rootless). It displays charging information and lets you restore normal charging whenever you want.
+USB Charge Control lets you set a maximum wired USB charging current. It displays charging information and lets you restore normal charging whenever you want.
 
 ## Features
 
@@ -12,4 +12,4 @@ USB Charge Control lets you set a maximum wired USB charging current on supporte
 
 **Note:** A cap limits current; it does not force faster charging. iOS telemetry can take 15–20 seconds to update the displayed readings and current cap.
 
-[Download the latest DEB and source](https://github.com/551UK/Charger-Control-iOS16/releases/latest)
+
