@@ -122,8 +122,8 @@ static UIColor *rgb(CGFloat r,CGFloat g,CGFloat b){return [UIColor colorWithRed:
     [self.scroll addSubview:self.enableSwitch];
     self.applyButton=[self makeButton:@"Apply selected current" y:515 color:rgb(.08,.45,.77) action:@selector(applyTapped:)];
     self.restoreButton=[self makeButton:@"Restore normal charging" y:575 color:rgb(.39,.20,.23) action:@selector(restoreTapped:)];
-    // Keep the short iOS telemetry delay disclaimer, but remove the other two explanatory paragraphs.
-    [self makeLabel:@"Live power readings may take 15–20 seconds to update while waiting for iOS telemetry. USB cap confirmation is separate from these readings." font:12 y:634 color:mute].frame=CGRectMake(18,634,330,66);
+    // A single short disclaimer covers both delayed live readings and the displayed cap.
+    [self makeLabel:@"Live power readings and the displayed USB current cap may take 15–20 seconds to update while iOS telemetry catches up." font:12 y:634 color:mute].frame=CGRectMake(18,634,330,66);
     self.scroll.contentSize=CGSizeMake(365,715);
     // Keep the repository link visible at the bottom, even when the data scrolls.
     self.githubButton=[UIButton buttonWithType:UIButtonTypeSystem];

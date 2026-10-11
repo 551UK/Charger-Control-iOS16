@@ -1,6 +1,6 @@
 Package: uk.551.chargingratetest
 Name: USB Charge Control
-Version: 0.8.16
+Version: 0.8.17
 Architecture: iphoneos-arm64
 Section: Utilities
 Priority: optional
