@@ -129,6 +129,7 @@ class SavedCapTests(unittest.TestCase):
             def __init__(self):self.api=FakeIO()
             def IO(self):return self.api
             def fmt(self,reading):return str(reading)
+            def valid_prior(self,value):return isinstance(value,int) and value>0
             def append(self,message):pass
         fake=FakeCore()
         with mock.patch.object(panel, "CORE", fake):
