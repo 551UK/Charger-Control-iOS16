@@ -405,6 +405,36 @@ def do_restore(reason='manual'):
         return _restore_locked(reason)
 
 
+def do_restore_with_power_restart():
+    """Restore normal charging, then reset the connected USB input path.
+
+    Only the explicit Restore button calls this. The switch-off action,
+    daemon watchdog, package upgrades and automatic reconnect do not pulse
+    the controller.
+    """
+    restored=do_restore('native-app-or-package-removal')
+    if read_state() is not None:
+        # Never try to restart charging with a live cap still owned by us.
+        return restored if not restored['ok'] else {
+            'ok':False,'message':'Cap still active; USB restart blocked.'
+        }
+    # A base-current refresh can fail AFTER the maximum override was removed.
+    # A controlled off/on cycle is the fallback when the actual cap is gone.
+    try:
+        before=snapshot()
+    except Exception as err:
+        return {'ok':False,'message':'USB cap cleared; cannot verify connection for restart: '+str(err)}
+    if before.get('plugged')==0:
+        # Restore must work even if the user already unplugged the cable.
+        return {'ok':True,'message':'Current cap removed; normal charging on next connection.'}
+    if before.get('plugged')!=1 or before.get('charging')!=1:
+        return {'ok':False,'message':'Current cap removed, but charging is not ready for automatic reset. Unplug/replug if charging remains low.'}
+    result=do_power_restart('restore-button')
+    if not result['ok']:
+        return {'ok':False,'message':'Current cap removed; '+result['message']}
+    return {'ok':True,'message':'Current cap removed and USB charging input restarted.'}
+
+
 def do_enable(limit,remember=True):
     global _LAST_ERROR
     try:ma=int(limit)

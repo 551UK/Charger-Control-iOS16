@@ -142,6 +142,69 @@ class SavedCapTests(unittest.TestCase):
         self.assertEqual(panel.read_state()["limit_ma"], 1400)
         self.assertEqual(fake.api.maximum, 1400)
 
+    def test_restore_button_clears_cap_then_soft_reconnects(self):
+        panel.save_requested_cap(1400)
+        with mock.patch.object(panel, "do_restore",
+                return_value={"ok": True, "message": "restored"}) as restore:
+            with mock.patch.object(panel, "read_state", return_value=None):
+                with mock.patch.object(panel, "snapshot",
+                      return_value={"plugged": 1, "charging": 1, "usb_max_ma": None}):
+                    with mock.patch.object(panel, "do_power_restart",
+                         return_value={"ok": True, "message": "USB restarted"}) as restart:
+                        result=panel.do_restore_with_power_restart()
+        self.assertTrue(result["ok"])
+        restore.assert_called_once_with("native-app-or-package-removal")
+        restart.assert_called_once_with("restore-button")
+
+    def test_restore_does_not_cycle_power_when_unplugged(self):
+        with mock.patch.object(panel,"do_restore",
+                return_value={"ok": True, "message": "restored"}):
+            with mock.patch.object(panel, "snapshot",
+                    return_value={"plugged": 0, "charging": 0}):
+                with mock.patch.object(panel, "do_power_restart") as restart:
+                    result=panel.do_restore_with_power_restart()
+        self.assertTrue(result["ok"])
+        restart.assert_not_called()
+
+    def test_restore_does_not_cycle_power_if_override_still_active(self):
+        panel.write_state({"session":"abc","original_max":None,"limit_ma":1200})
+        with mock.patch.object(panel, "do_restore",
+                return_value={"ok": False, "message": "restore failed"}):
+            with mock.patch.object(panel,"do_power_restart") as restart:
+                result=panel.do_restore_with_power_restart()
+        self.assertFalse(result["ok"])
+        restart.assert_not_called()
+
+    def test_restore_can_retry_soft_reconnect_after_base_refresh_failed(self):
+        # The previous software restore may have lifted the maximum but left
+        # the iOS charge path latched; the off/on cycle should still be tried.
+        with mock.patch.object(panel,"do_restore",
+                 return_value={"ok":False,"message":"base refresh unavailable"}):
+            with mock.patch.object(panel,"snapshot",
+                    return_value={"plugged":1,"charging":1,"usb_max_ma":None}):
+                with mock.patch.object(panel,"do_power_restart",
+                    return_value={"ok":True,"message":"USB restarted"}) as restart:
+                    result=panel.do_restore_with_power_restart()
+        self.assertTrue(result["ok"])
+        restart.assert_called_once_with("restore-button")
+
+    def test_restore_reports_if_soft_reconnect_failed(self):
+        with mock.patch.object(panel,"do_restore",
+                return_value={"ok":True,"message":"restored"}):
+            with mock.patch.object(panel,"snapshot",
+                    return_value={"plugged":1,"charging":1,"usb_max_ma":None}):
+                with mock.patch.object(panel,"do_power_restart",
+                    return_value={"ok":False,"message":"retry or replug"}) as restart:
+                    result=panel.do_restore_with_power_restart()
+        self.assertFalse(result["ok"])
+        self.assertIn("retry or replug",result["message"])
+        restart.assert_called_once()
+
+    def test_restore_button_targets_restart_not_plain_restore(self):
+        source=(ROOT/"source/USBChargeControl.m").read_text()
+        self.assertIn('[self sendAction:@"RESTART" success:@"Normal charging"]',source)
+        self.assertIn('else [self sendAction:@"RESTORE" success:@"Normal charging"]',source)
+
     def test_upgrade_recovery_does_not_clear_saved_value(self):
         panel.save_requested_cap(1300)
         with mock.patch.object(panel, "_restore_locked",

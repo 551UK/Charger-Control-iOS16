@@ -14,7 +14,8 @@ static NSString *request(NSString *command) {
     if(fd<0)return [NSString stringWithFormat:@"ERR socket %d",errno];
     struct sockaddr_un sa;memset(&sa,0,sizeof(sa));sa.sun_family=AF_UNIX;
     strlcpy(sa.sun_path,[kSocketPath UTF8String],sizeof(sa.sun_path));
-    struct timeval tv={4,0};
+    // A deliberate USB off/on recovery can outlast the ordinary read timeout.
+    struct timeval tv={[command isEqualToString:@"RESTART"]?12:4,0};
     setsockopt(fd,SOL_SOCKET,SO_RCVTIMEO,&tv,sizeof(tv));
     setsockopt(fd,SOL_SOCKET,SO_SNDTIMEO,&tv,sizeof(tv));
     if(connect(fd,(struct sockaddr *)&sa,sizeof(sa))!=0) {
@@ -232,7 +233,7 @@ static UIColor *rgb(CGFloat r,CGFloat g,CGFloat b){return [UIColor colorWithRed:
     NSString *raw=request(cmd);
     BOOL ok=[raw hasPrefix:@"OK "];NSString *msg=[raw stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
     self.busy=NO;[self refresh:nil];
-    NSString *successMsg=[cmd isEqualToString:@"RESTORE"]
+    NSString *successMsg=([cmd isEqualToString:@"RESTORE"] || [cmd isEqualToString:@"RESTART"])
         ? @"USB cap released. Checking charging recovery…"
         : [NSString stringWithFormat:@"%ldmA cap applied — live readings may be delayed",(long)[self selectedMA]];
     [self presentStatus:ok?successMsg:[NSString stringWithFormat:@"Failed: %@",msg] ok:ok];
@@ -246,7 +247,7 @@ static UIColor *rgb(CGFloat r,CGFloat g,CGFloat b){return [UIColor colorWithRed:
     (void)sender;
     [self sendAction:[NSString stringWithFormat:@"ENABLE %ld",(long)[self selectedMA]] success:@"Current cap"];
 }
-- (void)restoreTapped:(id)sender{(void)sender;[self sendAction:@"RESTORE" success:@"Normal charging"];}
+- (void)restoreTapped:(id)sender{(void)sender;[self sendAction:@"RESTART" success:@"Normal charging"];}
 - (void)dealloc{[self.timer invalidate];}
 @end
 @interface ChargeAppDelegate:UIResponder <UIApplicationDelegate>

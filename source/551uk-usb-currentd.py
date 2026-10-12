@@ -489,13 +489,12 @@ def serve():
                         conn.sendall(('ERR '+repr(e)+'\n').encode()[:400])
                     continue
                 elif command=='RESTART':
-                    # Only the native UI sends RESTART; package maintenance and
-                    # legacy diagnostics still send plain RESTORE (no power pulse).
-                    result=control_panel.do_restore('native-app-or-package-removal')
-                    if not result['ok']:
-                        conn.sendall(('ERR '+result['message']+'\n').encode()[:400]);continue
-                    restart=control_panel.do_power_restart('native-app')
-                    conn.sendall(('OK 0\n' if restart['ok'] else 'ERR '+restart['message']+'\n').encode()[:400])
+                    # Explicit Restore button: clear saved cap, release override,
+                    # then safely cycle USB power so charging renegotiates.
+                    # Normal switch off, package management and failsafes do
+                    # not use this power-cycle command.
+                    result=control_panel.do_restore_with_power_restart()
+                    conn.sendall(('OK 0\n' if result['ok'] else 'ERR '+result['message']+'\n').encode()[:400])
                     continue
                 elif command=='RESTORE_UPGRADE':
                     # Preserve the user-saved cap while dpkg temporarily stops
