@@ -497,6 +497,12 @@ def serve():
                     restart=control_panel.do_power_restart('native-app')
                     conn.sendall(('OK 0\n' if restart['ok'] else 'ERR '+restart['message']+'\n').encode()[:400])
                     continue
+                elif command=='RESTORE_UPGRADE':
+                    # Preserve the user-saved cap while dpkg temporarily stops
+                    # the old daemon during an in-place package upgrade.
+                    result=control_panel.do_restore('package-upgrade')
+                    conn.sendall(('OK 0\n' if result['ok'] else 'ERR '+result['message']+'\n').encode()[:400])
+                    continue
                 elif command=='RESTORE':
                     # An earlier release could have cleared its state marker
                     # while real charging remained low until physical replug.

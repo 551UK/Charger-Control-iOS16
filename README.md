@@ -4,7 +4,7 @@ USB Charge Control lets you set a maximum wired USB charging current. It display
 
 ## Features
 
-- **Adjustable current cap** — Choose a USB charging-current ceiling from 500 to 2400 mA in 100 mA steps.
+- **Adjustable current cap** — Choose a USB charging-current ceiling from 500 to 2400 mA in 100 mA steps. Your choice stays saved and reapplies after unplugging and reconnecting until you restore normal charging.
 - **Live charging data** — View charger rating, input-rail and battery power/current, USB voltage, and the effective USB current limit.
 - **Charging status** — See when a charger connects or disconnects and when a current cap is applied.
 - **One-tap restore** — Remove your selected cap and return to normal charging.

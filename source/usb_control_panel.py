@@ -19,6 +19,7 @@ PORT=55127
 HOST='127.0.0.1'
 PRIVATE=Path('/var/jb/var/lib/551uk-usbcurrent')
 STATE=PRIVATE/'active.json'
+REQUESTED=PRIVATE/'requested-cap.json'
 OPLOCK=PRIVATE/'operation.lock'
 TOKENFILE=PRIVATE/'web-token'
 POWER_MARKER=PRIVATE/'power-restart.json'
@@ -62,6 +63,34 @@ def atomic_bytes(path,data):
 
 
 def write_state(state):atomic_bytes(STATE,json.dumps(state,sort_keys=True).encode())
+
+
+def requested_cap():
+    """Saved user choice is separate from an applied, per-cable cap session."""
+    if REQUESTED.is_symlink():raise RuntimeError('Unsafe saved-cap symlink')
+    if not REQUESTED.exists():return None
+    data=json.loads(REQUESTED.read_text())
+    ma=data.get('limit_ma') if isinstance(data,dict) else None
+    if type(ma) is not int or not (MIN_MA<=ma<=MAX_MA) or (ma-MIN_MA)%STEP:
+        raise RuntimeError('Invalid saved USB current limit')
+    return ma
+
+
+def save_requested_cap(ma):
+    atomic_bytes(REQUESTED,json.dumps({'limit_ma':ma},sort_keys=True).encode())
+
+
+def forget_requested_cap():
+    if REQUESTED.is_symlink():raise RuntimeError('Unsafe saved-cap symlink')
+    REQUESTED.unlink(missing_ok=True)
+
+
+def definitely_unplugged(s):
+    """Require independent battery and Lightning-port evidence of a disconnect."""
+    return (s.get('plugged')==0 and isinstance(s.get('lightning_usb_type'),int)
+            and (s.get('lightning_usb_type')==0 or s.get('lightning_usb_power')==0))
+
+
 def read_state():
     if STATE.is_symlink():raise RuntimeError('Unsafe state file')
     if not STATE.exists():return None
@@ -359,16 +388,33 @@ def _restore_locked(reason='manual'):
 
 
 def do_restore(reason='manual'):
+    global _LAST_ERROR
     with serialized():
+        if _manual_reason(reason):
+            # Restore/disable is the ONLY user action which forgets the setting.
+            forget_requested_cap()
+            # A physical disconnect releases the cable session. Never require a
+            # charger just to disable the saved cap while unplugged.
+            s=snapshot()
+            if s.get('plugged')==0:
+                state=read_state()
+                if state is None or (definitely_unplugged(s) and s.get('usb_max_ma') is None):
+                    if state is not None:STATE.unlink(missing_ok=True)
+                    _LAST_ERROR=''
+                    return {'ok':True,'message':'Saved current cap disabled; normal charging next connection.'}
         return _restore_locked(reason)
 
 
-def do_enable(limit):
+def do_enable(limit,remember=True):
     global _LAST_ERROR
     try:ma=int(limit)
     except (TypeError,ValueError):return {'ok':False,'message':'Invalid current limit'}
     if ma<MIN_MA or ma>MAX_MA or (ma-MIN_MA)%STEP!=0:return {'ok':False,'message':'Choose 500–2400mA in 100mA steps'}
     with serialized():
+        # If Restore won the race against an automatic monitor iteration,
+        # never reapply a cap which the user has just removed.
+        if not remember and requested_cap()!=ma:
+            return {'ok':False,'message':'Saved cap changed; stale automatic apply cancelled.'}
         state=read_state()
         if state is not None:
             restored=_restore_locked('switch-limit')
@@ -417,6 +463,13 @@ def do_enable(limit):
                 _LAST_ERROR=f'Controller did not verify the {ma}mA cap. Restore: {r["message"]}'
                 return {'ok':False,'message':_LAST_ERROR}
             note(f'ENABLE confirmed USB maximum {observed}mA; no CPU/GPU/thermal adjustments')
+            if remember:
+                # Only persist a cap after the controller has confirmed it.
+                try:save_requested_cap(ma)
+                except Exception as err:
+                    note('SAVE CAP FAILED '+repr(err)+'; restoring hardware')
+                    recovery=_restore_locked('save-failed')
+                    return {'ok':False,'message':'Could not remember current cap: '+str(err)+'; restore: '+recovery['message']}
             _LAST_ERROR=''
             return {'ok':True,'message':f'{ma}mA cap applied (software-reported).'}
         finally:api.close(conn);api.release(acc)
@@ -428,8 +481,10 @@ def status_payload():
     except Exception as exc:
         s={'error':'Read-only sensors unavailable: '+str(exc)}
     state=read_state()
-    s['enabled']=bool(state)
-    s['selected_ma']=state['limit_ma'] if state else 1500
+    wanted=requested_cap()
+    # The toggle reflects the *saved* choice, even between cable connections.
+    s['enabled']=wanted is not None or state is not None
+    s['selected_ma']=wanted if wanted is not None else (state['limit_ma'] if state else 1500)
     # The Lightning registry updates before Apple's battery-power telemetry.
     # Detect cable presence directly, but never manufacture mA or W readings.
     usb_type=s.get('lightning_usb_type')
@@ -456,6 +511,8 @@ def status_payload():
     cap_age=time.time()-state.get('created_epoch',0) if state else -1
     if _LAST_ERROR:
         s['message']=_LAST_ERROR
+    elif definitely_unplugged(s):
+        s['message']='Charger Disconnected'
     elif verified_cap and 0<=cap_age<25:
         s['message']=f'{selected}mA cap applied — live power readings may be delayed'
     elif verified_cap:
@@ -474,25 +531,68 @@ def status_payload():
     return s
 
 
+def monitor_once():
+    """Reconcile the saved preference with the currently connected USB input."""
+    wanted=requested_cap()
+    state=read_state()
+    if wanted is None and state is None:return
+    s=snapshot()
+
+    if wanted is None:
+        # Compatibility with any legacy active session that has no saved choice.
+        if state and (s.get('plugged')==0 or s.get('charging')==0):
+            note('AUTO RESTORE: charging inactive and no saved cap')
+            do_restore('auto-disconnect')
+        elif state and s.get('usb_max_ma') is not None and s['usb_max_ma']!=state['limit_ma']:
+            note('NOTICE: USB maximum changed externally; dropping stale session')
+            with serialized():
+                current=read_state()
+                if current and current.get('session')==state['session']:
+                    STATE.unlink(missing_ok=True)
+        return
+
+    if definitely_unplugged(s):
+        # On a genuine unplug, forget only the hardware-session marker once
+        # the old maximum has disappeared. The user's choice remains saved.
+        if state and s.get('usb_max_ma') is None:
+            with serialized():
+                current=read_state()
+                if current and current.get('session')==state['session']:
+                    STATE.unlink(missing_ok=True)
+                    note(f'UNPLUGGED: retained saved {wanted}mA cap for next connection')
+        return
+
+    # Do not touch the USB controller while disconnected, idle, or still
+    # negotiating a fresh Lightning charging connection.
+    if s.get('plugged')!=1 or s.get('charging')!=1:return
+    if state:
+        if state['limit_ma']==wanted and s.get('usb_max_ma')==wanted:
+            return  # Already active: do not pulse the controller on each poll.
+        if s.get('usb_max_ma') not in (None,state['limit_ma']):
+            # An outside limit took ownership; never overwrite that owner.
+            note('AUTO CAP: a different USB maximum is present; not overwriting')
+            with serialized():
+                current=read_state()
+                if current and current.get('session')==state['session']:
+                    STATE.unlink(missing_ok=True)
+            return
+    elif s.get('usb_max_ma') is not None:
+        # Without our active marker, a pre-existing limit is not ours.
+        return
+
+    result=do_enable(wanted,remember=False)
+    if result['ok']:
+        note(f'AUTO APPLY: restored saved {wanted}mA cap after charging reconnection')
+    else:
+        note(f'AUTO APPLY PENDING: {result["message"]}')
+
+
 def monitor_loop():
     while True:
         time.sleep(PING_INTERVAL)
-        try:
-            state=read_state()
-            if not state:continue
-            s=snapshot()
-            if s.get('plugged')==0 or s.get('charging')==0:
-                note('AUTO RESTORE: charger disconnected or charging inactive')
-                do_restore('auto-disconnect')
-                continue
-            cap=s.get('usb_max_ma')
-            if cap is not None and cap!=state['limit_ma']:
-                note(f'NOTICE: Controller override changed externally to {cap}mA, disabling own monitoring without overwriting controller')
-                with serialized():
-                    if read_state() and read_state().get('session')==state['session']:STATE.unlink(missing_ok=True)
+        try:monitor_once()
         except Exception as err:
             note('MONITOR warning: '+repr(err))
-
 
 def boot_recover():
     # Fail-safe: never silently resume an override across daemon restart/re-jailbreak.

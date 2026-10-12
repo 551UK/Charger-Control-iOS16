@@ -2,6 +2,8 @@
 set +e
 case "$1" in
  remove|purge)
+  # A genuine uninstall discards the saved preference. Upgrades retain it.
+  rm -f /var/jb/var/lib/551uk-usbcurrent/requested-cap.json >/dev/null 2>&1 || true
   [ ! -L /var/jb/usr/libexec/551uk-usbcontroller-python ] && rm -f /var/jb/usr/libexec/551uk-usbcontroller-python
   clips=/var/mobile/Library/WebClips/551UKUSBChargeControl.webclip
   if [ -d "$clips" ] && [ ! -L "$clips" ]; then
