@@ -1,4 +1,4 @@
-"""Repackage the complete extracted v0.8.20 source ZIP into its rootless DEB.
+"""Repackage the complete extracted v0.8.21 source ZIP into its rootless DEB.
 
 Requires dpkg-deb. The ZIP includes the compiled native UIKit app and preserved
 charging helper; no compiler is required to repackage it.
@@ -10,7 +10,7 @@ import shutil
 
 root = Path(__file__).resolve().parent
 payload = root / 'payload'
-output = root / '551UK-USB-Charge-Control-v0.8.20.deb'
+output = root / '551UK-USB-Charge-Control-v0.8.21.deb'
 assert (payload / 'DEBIAN/control').is_file()
 assert (payload / 'var/jb/Applications/USBChargeControl.app/USBChargeControl').is_file()
 assert not (payload / 'var/jb/Applications/ChargingRate.app').exists()

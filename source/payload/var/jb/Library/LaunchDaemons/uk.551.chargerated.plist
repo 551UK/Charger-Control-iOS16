@@ -12,7 +12,9 @@
 	<key>GroupName</key>
 	<string>wheel</string>
 	<key>KeepAlive</key>
-	<false/>
+	<true/>
+	<key>ThrottleInterval</key>
+	<integer>15</integer>
 	<key>Label</key>
 	<string>uk.551.chargerated</string>
 	<key>ProgramArguments</key>
@@ -26,7 +28,7 @@
 	<key>RunAtLoad</key>
 	<true/>
 	<key>StandardErrorPath</key>
-	<string>/dev/null</string>
+	<string>/var/jb/var/mobile/551UK-ChargeRateTest-v052/daemon-stderr.txt</string>
 	<key>StandardOutPath</key>
 	<string>/dev/null</string>
 	<key>UserName</key>
